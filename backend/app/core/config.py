@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "Novae Conseil"
+    database_url: str = "sqlite:///./novae.db"
 
 
 settings = Settings()
