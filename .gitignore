@@ -1,0 +1,27 @@
+# Backend (Python / uv)
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/*.db
+backend/*.db-journal
+backend/*.sqlite
+
+# Frontend (Node / Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.pnpm-store/
+
+# Env & editor
+.env
+.env.local
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
