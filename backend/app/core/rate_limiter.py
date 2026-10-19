@@ -25,7 +25,7 @@ class RateLimiter:
     def __init__(
         self,
         per_second: int = 1,
-        per_day: int = 30,
+        per_day: int = 10,
         day_seconds: int = 86_400,
     ) -> None:
         if per_second < 1 or per_day < 1:
