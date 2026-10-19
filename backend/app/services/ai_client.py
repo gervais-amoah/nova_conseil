@@ -2,21 +2,31 @@
 """AI client abstraction.
 
 The rest of the codebase depends only on the `AIClient` protocol.
-Concrete adapters (LM Studio local, Groq prod) live here.
+Concrete adapters live here:
+
+  - OpenAICompatibleAIClient : real HTTP adapter for LM Studio (dev),
+                                Groq, Together, etc. (prod). Same protocol,
+                                different base_url + model.
+  - MockAIClient             : deterministic stub for `AI_CLIENT_MODE=mock`.
+                                Returns a fixed "uncertain" classification.
+                                Used to run the app without any LLM.
 
 Design notes:
 - `system` and `user` are passed separately all the way down to the
   HTTP payload. User text is NEVER concatenated into the system prompt.
   That is the whole point of the injection-defense seam in T-202.
-- The client raises `AIClientError` on any failure. It does not decide
+- Clients raise `AIClientError` on any failure. They do not decide
   fallbacks; the mediator (T-201b) does.
 """
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 import httpx
+
+if TYPE_CHECKING:
+    from app.core.config import Settings
 
 
 class AIClientError(RuntimeError):
@@ -37,11 +47,12 @@ class AIClient(Protocol):
     async def complete(self, *, system: str, user: str) -> str: ...
 
 
-class LMStudioAIClient:
-    """OpenAI-compatible adapter. Works against LM Studio's `/v1/chat/completions`.
+class OpenAICompatibleAIClient:
+    """HTTP adapter for any OpenAI-compatible `/v1/chat/completions` endpoint.
 
-    Also works unchanged against Groq's free tier later — that is why we
-    depend on the protocol, not this class.
+    Works unchanged against LM Studio (dev), Groq, Together, Fireworks, etc.
+    (prod). Only base_url and model differ between environments — the request
+    shape and response shape are identical.
     """
 
     def __init__(
@@ -53,14 +64,12 @@ class LMStudioAIClient:
         client: httpx.AsyncClient | None = None,
     ) -> None:
         if not base_url:
-            raise TypeError("base_url is required for LMStudioAIClient")
+            raise TypeError("base_url is required for OpenAICompatibleAIClient")
         if not model:
-            raise TypeError("model is required for LMStudioAIClient")
+            raise TypeError("model is required for OpenAICompatibleAIClient")
         self._base_url = base_url.rstrip("/")
         self._model = model
         self._timeout = timeout
-        # A caller may inject a client (tests use httpx.MockTransport).
-        # Otherwise we create one per adapter instance and reuse it.
         self._client = client or httpx.AsyncClient(timeout=timeout)
         self._owns_client = client is None
 
@@ -94,3 +103,53 @@ class LMStudioAIClient:
             return data["choices"][0]["message"]["content"]
         except (ValueError, KeyError, IndexError, TypeError) as exc:
             raise AIClientError(f"malformed response envelope: {exc!r}") from exc
+
+
+class MockAIClient:
+    """Deterministic stub for local dev without a running LLM.
+
+    Always returns an "uncertain" classification. The reasoning string
+    is prefixed with '[mock]' so logs and DB rows make the mode obvious
+    at a glance — no chance of confusing mock output with real output.
+
+    NOT used in tests: tests inject `tests.fakes.FakeAIClient` via
+    `app.dependency_overrides[get_ai_client]`. This class exists only
+    for `AI_CLIENT_MODE=mock` when running the app manually.
+    """
+
+    async def complete(self, *, system: str, user: str) -> str:
+        return (
+            '{"category":"uncertain","confidence":0.0,'
+            '"reasoning":"[mock] no LLM configured"}'
+        )
+
+
+def make_ai_client(settings: "Settings") -> AIClient:
+    """Single switch point for dev / local / production LLM backends.
+
+    Selected by `Settings.ai_client_mode`:
+
+      - "mock"       : deterministic stub, no network (default for T-203)
+      - "local"      : LM Studio at `Settings.lm_studio_base_url`
+      - "production" : any OpenAI-compatible endpoint configured via
+                       `Settings.production_ai_base_url` / `_model`
+
+    Raises ValueError on unknown mode — fail fast at boot rather than
+    silently defaulting, which would hide a typo in env config.
+    """
+    mode = settings.ai_client_mode
+    if mode == "mock":
+        return MockAIClient()
+    if mode == "local":
+        return OpenAICompatibleAIClient(
+            base_url=settings.lm_studio_base_url,
+            model=settings.lm_studio_model,
+        )
+    if mode == "production":
+        return OpenAICompatibleAIClient(
+            base_url=settings.production_ai_base_url,
+            model=settings.production_ai_model,
+        )
+    raise ValueError(
+        f"unknown AI_CLIENT_MODE: {mode!r} (expected mock|local|production)"
+    )

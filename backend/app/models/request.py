@@ -3,7 +3,7 @@ import enum
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum, String, Text, func
+from sqlalchemy import Boolean, Enum, Float, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TZDateTime, utcnow
@@ -38,6 +38,8 @@ class Request(Base):
     )
     ai_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     final_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ai_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classifier_source: Mapped[str | None] = mapped_column(String(20), nullable=True)
     human_corrected_flag: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(

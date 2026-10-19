@@ -13,7 +13,7 @@ import pytest
 from app.services.ai_client import (
     AIClient,
     AIClientError,
-    LMStudioAIClient,
+    OpenAICompatibleAIClient,
 )
 
 from tests.fakes.fake_ai_client import FakeAIClient
@@ -26,7 +26,7 @@ def test_fake_satisfies_protocol():
 
 
 def test_lmstudio_satisfies_protocol():
-    client = LMStudioAIClient(base_url="http://x", model="m")
+    client = OpenAICompatibleAIClient(base_url="http://x", model="m")
     try:
         assert isinstance(client, AIClient)
     finally:
@@ -65,10 +65,10 @@ async def test_fake_raises_scripted_exception():
 # ----------------------------------------------------- LM Studio adapter
 
 
-def _mk_adapter(handler) -> LMStudioAIClient:
+def _mk_adapter(handler) -> OpenAICompatibleAIClient:
     transport = httpx.MockTransport(handler)
     http = httpx.AsyncClient(transport=transport)
-    return LMStudioAIClient(
+    return OpenAICompatibleAIClient(
         base_url="http://lmstudio.local/",
         model="llama-test",
         client=http,
@@ -137,9 +137,9 @@ async def test_adapter_raises_on_transport_error():
 
 def test_adapter_requires_base_url():
     with pytest.raises(TypeError):
-        LMStudioAIClient(base_url="", model="m")
+        OpenAICompatibleAIClient(base_url="", model="m")
 
 
 def test_adapter_requires_model():
     with pytest.raises(TypeError):
-        LMStudioAIClient(base_url="http://x", model="")
+        OpenAICompatibleAIClient(base_url="http://x", model="")

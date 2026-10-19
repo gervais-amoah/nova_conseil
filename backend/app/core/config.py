@@ -13,5 +13,17 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
 
+    # LLM backend switch. One of: "mock" | "local" | "production".
+    # Default is "mock" so a fresh clone runs without an LLM.
+    ai_client_mode: str = "mock"
+
+    # LM Studio (local dev) — OpenAI-compatible endpoint.
+    lm_studio_base_url: str = "http://localhost:1234"
+    lm_studio_model: str = "local-model"
+
+    # Production (Groq, Together, Fireworks, …) — OpenAI-compatible endpoint.
+    production_ai_base_url: str = "https://api.groq.com/openai"
+    production_ai_model: str = "llama-3.1-8b-instant"
+
 
 settings = Settings()
