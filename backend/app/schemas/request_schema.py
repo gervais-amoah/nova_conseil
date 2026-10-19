@@ -1,4 +1,7 @@
 # FILE: backend/app/schemas/request_schema.py
+from datetime import datetime
+from enum import Enum
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
@@ -27,3 +30,19 @@ class RequestCreate(BaseModel):
         if not v.strip():
             raise ValueError("must not be empty or whitespace-only")
         return v
+
+
+class RequestStatusRead(str, Enum):
+    RECEIVED = "received"
+    CLASSIFYING = "classifying"
+    CLASSIFIED = "classified"
+    UNCERTAIN = "uncertain"
+    ASSIGNED = "assigned"
+    RESOLVED = "resolved"
+
+
+class RequestRead(BaseModel):
+    """Response shape for POST /api/v1/requests (201)."""
+
+    reference_id: str
+    status: RequestStatusRead
