@@ -464,3 +464,5 @@ Do not re-implement Phase 1. Start with T-201a RED: AI client protocol and fake.
 - CORS allow_credentials=False. Toggle to True in T-302c when the admin cookie must cross origins. Requires explicit allow_origins (already explicit).
 
 --- END MEMORY COMPACT ---
+
+## TEMP
