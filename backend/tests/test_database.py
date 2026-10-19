@@ -79,3 +79,26 @@ def test_request_update_persists(db_session):
     assert loaded.final_category == "Coaching & Training"
     assert loaded.human_corrected_flag is True
     assert loaded.updated_at >= before
+
+
+def test_get_db_yields_and_closes(monkeypatch):
+    """Real get_db must yield a session and close it on teardown."""
+    from app.core import database
+
+    closed: list[bool] = []
+
+    class _FakeSession:
+        def close(self) -> None:
+            closed.append(True)
+
+    monkeypatch.setattr(database, "SessionLocal", lambda: _FakeSession())
+
+    gen = database.get_db()
+    session = next(gen)
+    assert session is not None
+    assert closed == []
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+    assert closed == [True]

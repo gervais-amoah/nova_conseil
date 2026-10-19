@@ -13,11 +13,8 @@ def db_session():
     Uses StaticPool so the same in-memory DB is shared across connections
     inside a single test, then torn down completely afterward.
     """
+    import app.models  # noqa: F401  — registers all models with Base.metadata
     from app.core.database import Base
-
-    # Import models so they register with Base.metadata before create_all
-    from app.models import request as _request_model  # noqa: F401
-    from sqlalchemy.pool import StaticPool
 
     engine = create_engine(
         "sqlite://",
