@@ -1,7 +1,6 @@
 # FILE: backend/main.py
 from contextlib import asynccontextmanager
 
-import app.models  # noqa: F401  — registers all models with Base.metadata
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -11,8 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Dev convenience: create tables if missing. NOT a substitute for
-    # real migrations — swap for Alembic when schema changes are possible.
     Base.metadata.create_all(bind=engine)
     yield
 
@@ -24,7 +21,7 @@ app.add_middleware(
     allow_origins=settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=False,
+    allow_credentials=True,  # <-- CHANGED: Must be True for session cookies to work
 )
 
 app.include_router(api_router, prefix="/api/v1")

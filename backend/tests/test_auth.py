@@ -1,10 +1,7 @@
 # FILE: backend/tests/test_auth.py
 import pytest
-from app.api.v1.deps import current_staff
 from app.core.security import hash_password
 from app.models.staff import Staff
-from fastapi import Depends, FastAPI
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture

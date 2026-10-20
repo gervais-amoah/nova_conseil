@@ -177,6 +177,6 @@ def test_override_re_reoverride_creates_second_audit_log(ai_classified_request):
         assert len(logs) == 2
         # And the second log's old_value is the PREVIOUS FINAL category ('support'),
         # not the AI category ('sales'). Audit tracks the human decision chain.
-        second_log = sorted(logs, key=lambda log: log.id)[-1]
+        second_log = max(logs, key=lambda log: log.id)
         assert second_log.old_value == "support"
         assert second_log.new_value == "finance"

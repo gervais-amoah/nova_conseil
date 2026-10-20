@@ -15,6 +15,11 @@ class Settings(BaseSettings):
 
     secret_key: str  # Required! No default. Forces explicit .env configuration.
 
+    # Dev defaults ensure E2E tests and local dev always have a known admin user.
+    # Override in prod .env to disable or change.
+    staff_seed_email: str = "admin@example.com"
+    staff_seed_password: str = "dev-password"
+
     # LLM backend switch. One of: "mock" | "local" | "production".
     # Default is "mock" so a fresh clone runs without an LLM.
     ai_client_mode: str = "mock"
@@ -26,6 +31,9 @@ class Settings(BaseSettings):
     # Production (Groq, Together, Fireworks, …) — OpenAI-compatible endpoint.
     production_ai_base_url: str = "https://api.groq.com/openai"
     production_ai_model: str = "llama-3.1-8b-instant"
+
+    # class Config:
+    #     env_file = ".env"
 
 
 settings = Settings()
