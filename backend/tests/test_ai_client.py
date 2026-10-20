@@ -95,7 +95,7 @@ async def test_adapter_sends_separate_role_messages():
     body = captured["body"]
     assert body["model"] == "llama-test"
     assert body["temperature"] == 0
-    assert body["response_format"] == {"type": "json_object"}
+    # assert body["response_format"] == {"type": "json_object"} # No more using it because model does not include it (at least, gemma does not)
     assert body["messages"] == [
         {"role": "system", "content": "SYS"},
         {"role": "user", "content": "USR"},

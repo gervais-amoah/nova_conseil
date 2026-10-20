@@ -11,6 +11,7 @@ Usage:
 
     # Override fixture path
     uv run python -m backend.scripts.evaluate_ai --fixture path/to/file.json
+     uv run python -m scripts.evaluate_ai --mode local --tier edge|original|realistic|all
 
 Exit code:
     0  — accuracy >= ACCURACY_GATE (0.85)
@@ -39,7 +40,7 @@ from app.services.classification import classify_request
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 ACCURACY_GATE = 0.85
-MIN_FIXTURE_SIZE = 10
+MIN_FIXTURE_SIZE = 20
 DEFAULT_FIXTURE = (
     Path(__file__).resolve().parent.parent
     / "tests"

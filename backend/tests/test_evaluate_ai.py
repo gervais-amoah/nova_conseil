@@ -131,6 +131,7 @@ def test_report_contains_all_classes_and_overall_accuracy():
             confidence=0.9,
             source="ai",
             reasoning="r",
+            tier="original",
         ),
         ExampleResult(
             id="x2",
@@ -140,6 +141,7 @@ def test_report_contains_all_classes_and_overall_accuracy():
             confidence=0.9,
             source="ai",
             reasoning="r",
+            tier="edge",
         ),
     ]
     report = format_report(metrics, examples, overall=1.0)
@@ -161,6 +163,7 @@ def test_report_flags_fallback_predictions():
             confidence=0.0,
             source="fallback",
             reasoning="",
+            tier="realistic",
         ),
     ]
     report = format_report(metrics, examples, overall=0.0)
