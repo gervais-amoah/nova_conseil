@@ -31,7 +31,7 @@ from app.services.prompt_guard import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TIMEOUT_SECONDS = 8.0
+DEFAULT_TIMEOUT_SECONDS = 30.0
 
 
 async def classify_request(

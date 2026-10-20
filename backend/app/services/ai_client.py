@@ -60,7 +60,7 @@ class OpenAICompatibleAIClient:
         *,
         base_url: str,
         model: str,
-        timeout: float = 8.0,
+        timeout: float = 30.0,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         if not base_url:
@@ -81,7 +81,7 @@ class OpenAICompatibleAIClient:
         payload = {
             "model": self._model,
             "temperature": 0,
-            "response_format": {"type": "json_object"},
+            # "response_format": {"type": "json_object"}, # failing with LM Studio
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},

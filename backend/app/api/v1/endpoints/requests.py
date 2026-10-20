@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Module-level constant so it can be monkeypatched in tests.
 # Production value is the source of truth.
-AI_CLASSIFICATION_TIMEOUT_SECONDS = 8.0
+AI_CLASSIFICATION_TIMEOUT_SECONDS = 30.0
 
 router = APIRouter()
 
