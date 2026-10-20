@@ -5,7 +5,7 @@ from app.core.security import verify_password
 from app.models.staff import Staff
 from scripts.seed_staff import seed_staff
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 

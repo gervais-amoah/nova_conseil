@@ -11,8 +11,8 @@ touches `Request.audit_logs` (the dev server, unlike conftest.py, has no
 reason to import audit.py otherwise).
 """
 
-from app.models.audit import AuditLog  # noqa: F401
-from app.models.request import Request, RequestStatus  # noqa: F401
+from app.models.audit import AuditLog
+from app.models.request import Request, RequestStatus
 from app.models.staff import Staff
 
 __all__ = ["AuditLog", "Request", "RequestStatus", "Staff"]
