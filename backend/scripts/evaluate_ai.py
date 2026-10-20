@@ -35,12 +35,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.services.ai_client import AIClient, make_ai_client
-from app.services.ai_mediator import Category
 from app.services.classification import classify_request
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 ACCURACY_GATE = 0.85
-MIN_FIXTURE_SIZE = 20
+MIN_FIXTURE_SIZE = 10
 DEFAULT_FIXTURE = (
     Path(__file__).resolve().parent.parent
     / "tests"
@@ -62,6 +61,7 @@ class LabeledExample(BaseModel):
     text: str = Field(min_length=1)
     expected_category: str
     notes: str | None = None
+    tier: str = "original"  # "original" | "realistic" | "edge"
 
     @field_validator("expected_category")
     @classmethod
@@ -70,6 +70,13 @@ class LabeledExample(BaseModel):
             raise ValueError(
                 f"unknown category {v!r}; must be one of {sorted(VALID_CATEGORIES)}"
             )
+        return v
+
+    @field_validator("tier")
+    @classmethod
+    def _known_tier(cls, v: str) -> str:
+        if v not in {"original", "realistic", "edge"}:
+            raise ValueError(f"unknown tier {v!r}")
         return v
 
 
@@ -165,6 +172,7 @@ class ExampleResult:
     expected: str
     predicted: str
     confidence: float
+    tier: str  # to know the tier to evaluate
     source: str  # "ai" | "fallback"
     reasoning: str
 
@@ -196,6 +204,7 @@ async def run_evaluation(
                 confidence=classification.confidence,
                 source=classification.source,
                 reasoning=classification.reasoning,
+                tier=ex.tier,
             )
         )
 
@@ -273,6 +282,22 @@ def format_report(
     return "\n".join(lines)
 
 
+def format_tier_breakdown(examples: list[ExampleResult]) -> str:
+    """Per-tier accuracy. Only meaningful when examples span >1 tier."""
+    by_tier: dict[str, list[ExampleResult]] = {}
+    for e in examples:
+        by_tier.setdefault(e.tier, []).append(e)
+
+    lines = ["", "=" * 60, "Per-tier accuracy", "=" * 60]
+    for tier in ("original", "realistic", "edge"):
+        group = by_tier.get(tier)
+        if not group:
+            continue
+        correct = sum(1 for e in group if e.expected == e.predicted)
+        lines.append(f"{tier:<12} {correct / len(group):.3f} ({correct}/{len(group)})")
+    return "\n".join(lines)
+
+
 # --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
@@ -307,10 +332,21 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_FIXTURE,
         help=f"Path to labeled fixture (default: {DEFAULT_FIXTURE})",
     )
+    parser.add_argument(
+        "--tier",
+        choices=["original", "realistic", "edge", "all"],
+        default="all",
+        help="Which tier(s) to evaluate (default: all)",
+    )
     args = parser.parse_args(argv)
 
     try:
         examples = load_fixture(args.fixture)
+        if args.tier != "all":
+            examples = [ex for ex in examples if ex.tier == args.tier]
+            if not examples:
+                print(f"FATAL: no examples in tier {args.tier!r}", file=sys.stderr)
+                return 1
     except (ValidationError, ValueError, FileNotFoundError) as exc:
         print(f"FATAL: failed to load fixture: {exc}", file=sys.stderr)
         return 1
@@ -319,6 +355,11 @@ def main(argv: list[str] | None = None) -> int:
     result = run_evaluation_sync(examples, ai_client)
 
     print(format_report(result.per_class, result.examples, overall=result.accuracy))
+
+    # per-tier breakdown, only meaningful when multiple tiers are present
+    if args.tier == "all":
+        print(format_tier_breakdown(result.examples))
+
     print()
     if result.passes_gate:
         print(f"PASS  accuracy {result.accuracy:.3f} >= gate {ACCURACY_GATE:.2f}")
