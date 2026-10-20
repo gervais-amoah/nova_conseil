@@ -25,3 +25,15 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
 ]
+
+[tool.mutmut]
+debug = true
+source_paths = ["app/"]
+pytest_add_cli_args_test_selection = ["tests/test_ai_mediator.py"]
+also_copy = [
+    "main.py",
+    ".env",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

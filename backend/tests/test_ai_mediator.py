@@ -79,6 +79,21 @@ def test_extra_keys_are_ignored():
     assert got.category is Category.SALES
     assert got.source == "ai"
 
+def test_confidence_at_lower_boundary_is_valid():
+    """confidence = 0.0 is a valid model output (means 'no confidence'),
+    NOT a fallback. Only the [0,1] range is accepted, boundary inclusive."""
+    raw = '{"category":"Sales","confidence":0.0,"reasoning":"r"}'
+    got = parse_classification(raw)
+    assert got.source == "ai"
+    assert got.category is Category.SALES
+    assert got.confidence == 0.0
+
+def test_category_with_surrounding_whitespace_is_accepted():
+    """LLMs sometimes emit `"Sales "` or `" Sales"`. strip() normalizes."""
+    raw = '{"category":"  Sales  ","confidence":0.9,"reasoning":"r"}'
+    got = parse_classification(raw)
+    assert got.category is Category.SALES
+    assert got.source == "ai"
 
 # ------------------------------------------------------------- fallbacks
 
