@@ -1,5 +1,4 @@
 # FILE: backend/app/schemas/request_schema.py
-from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator

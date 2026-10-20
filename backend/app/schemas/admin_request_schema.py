@@ -1,5 +1,5 @@
 # FILE: backend/app/schemas/admin_request_schema.py
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.request_schema import RequestStatusRead
 
@@ -42,3 +42,16 @@ class PaginatedRequests(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+class CategoryOverridePayload(BaseModel):
+    """Payload for PATCH /admin/requests/{id}/category.
+
+    Guards:
+      - final_category required, non-empty, stripped
+      - extra fields rejected (extra="forbid")
+    """
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    final_category: str = Field(min_length=1, max_length=50)
