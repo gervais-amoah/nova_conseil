@@ -13,5 +13,6 @@ reason to import audit.py otherwise).
 
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.request import Request, RequestStatus  # noqa: F401
+from app.models.staff import Staff
 
-__all__ = ["AuditLog", "Request", "RequestStatus"]
+__all__ = ["AuditLog", "Request", "RequestStatus", "Staff"]
