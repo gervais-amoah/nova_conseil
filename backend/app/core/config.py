@@ -13,6 +13,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
 
+    secret_key: str  # Required! No default. Forces explicit .env configuration.
+
     # LLM backend switch. One of: "mock" | "local" | "production".
     # Default is "mock" so a fresh clone runs without an LLM.
     ai_client_mode: str = "mock"

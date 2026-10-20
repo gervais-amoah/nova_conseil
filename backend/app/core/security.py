@@ -1,6 +1,13 @@
 # FILE: backend/app/core/security.py
+"""Session cookie contract. Single source of truth for name + lifetime,
+so the login endpoint and the current_staff dependency can never drift apart.
+"""
+
 import bcrypt
-from itsdangerous import BadSignature, URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer
+
+SESSION_COOKIE_NAME = "session"
+SESSION_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 hours
 
 
 def hash_password(password: str) -> str:

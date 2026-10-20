@@ -1,5 +1,5 @@
 # FILE: backend/tests/conftest.py
-import app.models  # noqa: F401  — registers all models with Base.metadata
+import app.models
 import pytest
 from app.api.v1.deps import get_ai_client, get_rate_limiter
 from app.core.database import Base, get_db
