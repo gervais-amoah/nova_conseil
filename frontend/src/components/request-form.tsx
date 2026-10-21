@@ -2,7 +2,7 @@
 "use client";
 
 import { ApiError, submitRequest } from "@/lib/api";
-import { type SubmitEvent, useState } from "react";
+import { type SyntheticEvent, useState } from "react";
 
 type SubmitState =
   | { kind: "idle" }
@@ -13,9 +13,9 @@ type SubmitState =
 export function RequestForm() {
   const [state, setState] = useState<SubmitState>({ kind: "idle" });
 
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    console.log("submit fired");
     e.preventDefault();
-    alert("hey!!!");
     setState({ kind: "submitting" });
 
     const form = new FormData(e.currentTarget);
@@ -78,12 +78,12 @@ export function RequestForm() {
 
   return (
     <form
+      method="post"
       onSubmit={handleSubmit}
-      onInvalidCapture={() => console.log("Invalid field")}
       className="flex w-full max-w-lg flex-col gap-4"
     >
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Name</span>
+        <span className="text-sm font-medium">Name *</span>
         <input
           name="name"
           type="text"
@@ -94,7 +94,7 @@ export function RequestForm() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Email</span>
+        <span className="text-sm font-medium">Email *</span>
         <input
           name="email"
           type="email"
@@ -105,7 +105,7 @@ export function RequestForm() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Message</span>
+        <span className="text-sm font-medium">Message *</span>
         <textarea
           name="message"
           required

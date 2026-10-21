@@ -12,7 +12,17 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  allowedDevOrigins: ["172.17.192.1"],
+  allowedDevOrigins: ["172.17.192.1", "192.168.1.69"], // localhosts
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com", // Replace with your image domain
+        port: "",
+        pathname: "/**", // Allows all image paths under this domain
+      },
+    ],
+  },
 };
 
 export default nextConfig;
