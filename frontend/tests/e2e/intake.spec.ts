@@ -39,6 +39,11 @@ test("invalid email shows an inline error and no success state", async ({
 
   await page.getByRole("button", { name: /send request/i }).click();
 
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: /please check the form fields/i }),
+  ).toBeVisible();
+
   await expect(page.getByText(/REQ-[A-F0-9]{12}/)).not.toBeVisible();
 });
