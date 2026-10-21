@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     production_ai_base_url: str = "https://api.groq.com/openai"
     production_ai_model: str = "llama-3.1-8b-instant"
 
-    # class Config:
-    #     env_file = ".env"
+    rate_limit_per_second: int = 1
+    rate_limit_per_day: int = 30
 
 
 settings = Settings()

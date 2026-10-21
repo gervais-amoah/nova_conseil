@@ -60,7 +60,12 @@ def client():
         finally:
             db.close()
 
-    limiter = RateLimiter(per_second=1, per_day=10)
+    from app.core.config import settings
+
+    limiter = RateLimiter(
+        per_second=settings.rate_limit_per_second,
+        per_day=settings.rate_limit_per_day,
+    )
 
     # Default AI client: empty fake. Any test that doesn't override
     # get_ai_client will hit this; it raises AIClientError("exhausted"),

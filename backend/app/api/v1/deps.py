@@ -20,8 +20,13 @@ _DB_DEPENDENCY = Depends(get_db)
 
 @lru_cache(maxsize=1)
 def get_rate_limiter() -> RateLimiter:
-    """Process-wide limiter. Product limits live here, not in the class default."""
-    return RateLimiter(per_second=1, per_day=10)
+    """Process-wide limiter. Limits are read from settings, allowing dev/E2E overrides via .env."""
+    from app.core.config import settings
+
+    return RateLimiter(
+        per_second=settings.rate_limit_per_second,
+        per_day=settings.rate_limit_per_day,
+    )
 
 
 @lru_cache(maxsize=1)
