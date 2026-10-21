@@ -52,6 +52,10 @@ html {
   scroll-behavior: smooth;
 }
 
+button:hover {
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

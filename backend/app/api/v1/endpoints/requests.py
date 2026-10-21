@@ -22,6 +22,10 @@ AI_CLASSIFICATION_TIMEOUT_SECONDS = 30.0
 
 router = APIRouter()
 
+_DB_DEPENDENCY = Depends(get_db)
+_RATE_LIMITER = Depends(get_rate_limiter)
+_AI_CLIENT = Depends(get_ai_client)
+
 
 def _client_key(request: Request) -> str:
     """Return an opaque key for rate limiting.
@@ -38,9 +42,9 @@ def _client_key(request: Request) -> str:
 async def create_request(
     payload: RequestCreate,
     request: Request,
-    db: Session = Depends(get_db),
-    limiter: RateLimiter = Depends(get_rate_limiter),
-    ai_client: AIClient = Depends(get_ai_client),
+    db: Session = _DB_DEPENDENCY,
+    limiter: RateLimiter = _RATE_LIMITER,
+    ai_client: AIClient = _AI_CLIENT,
 ) -> RequestRead:
     allowed, retry_after = limiter.check(_client_key(request))
     if not allowed:

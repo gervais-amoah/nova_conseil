@@ -1,5 +1,4 @@
 # FILE: backend/app/models/request.py
-import enum
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -7,18 +6,10 @@ from sqlalchemy import Boolean, Enum, Float, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TZDateTime, utcnow
+from app.core.enums import RequestStatus
 
 if TYPE_CHECKING:
     from app.models.audit import AuditLog
-
-
-class RequestStatus(str, enum.Enum):
-    RECEIVED = "received"
-    CLASSIFYING = "classifying"
-    CLASSIFIED = "classified"
-    UNCERTAIN = "uncertain"
-    ASSIGNED = "assigned"
-    RESOLVED = "resolved"
 
 
 class Request(Base):

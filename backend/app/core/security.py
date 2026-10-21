@@ -33,8 +33,8 @@ def create_session_token(user_id: int, secret_key: str) -> str:
 
 def verify_session_token(token: str, secret_key: str) -> int:
     """
-    Verify a session token and return the user ID.
+    Verify a session token and return the user ID - enforce its maximum lifetime.
     Raises itsdangerous.BadSignature if the token was tampered with.
     """
     serializer = URLSafeTimedSerializer(secret_key)
-    return serializer.loads(token)
+    return serializer.loads(token, max_age=SESSION_MAX_AGE_SECONDS)

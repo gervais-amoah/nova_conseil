@@ -1,7 +1,9 @@
 # FILE: backend/app/schemas/admin_request_schema.py
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.request_schema import RequestStatusRead
+from app.core.enums import RequestStatus
 
 
 class AdminRequestListItem(BaseModel):
@@ -13,7 +15,7 @@ class AdminRequestListItem(BaseModel):
     reference_id: str
     name: str
     email: str
-    status: RequestStatusRead
+    status: RequestStatus
     ai_category: str | None
     final_category: str | None
     human_corrected_flag: bool
@@ -29,7 +31,7 @@ class AdminRequestDetail(BaseModel):
     name: str
     email: str
     message: str
-    status: RequestStatusRead
+    status: RequestStatus
     ai_category: str | None
     ai_confidence: float | None
     classifier_source: str | None
@@ -55,3 +57,11 @@ class CategoryOverridePayload(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     final_category: str = Field(min_length=1, max_length=50)
+
+
+class StatusTransitionPayload(BaseModel):
+    """A staff-requested transition to an actionable workflow state."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    status: Literal["assigned", "resolved"]

@@ -13,6 +13,7 @@ from app.schemas.admin_request_schema import (
     AdminRequestListItem,
     CategoryOverridePayload,
     PaginatedRequests,
+    StatusTransitionPayload,
 )
 
 router = APIRouter()
@@ -106,5 +107,80 @@ async def override_category(
 
     db.commit()
     db.refresh(request)
+
+    return AdminRequestDetail.model_validate(request)
+
+
+# Only staff-controlled transitions belong here.
+ALLOWED_STATUS_TRANSITIONS: dict[RequestStatus, set[RequestStatus]] = {
+    RequestStatus.CLASSIFIED: {RequestStatus.ASSIGNED},
+    RequestStatus.UNCERTAIN: {RequestStatus.ASSIGNED},
+    RequestStatus.ASSIGNED: {RequestStatus.RESOLVED},
+}
+
+
+@router.patch(
+    "/admin/requests/{request_id}/status",
+    response_model=AdminRequestDetail,
+)
+async def transition_request_status(
+    request_id: int,
+    payload: StatusTransitionPayload,
+    db: Session = _DB_DEPENDENCY,
+    current_staff: Staff = _CURRENT_STAFF_DEPENDENCY,
+) -> AdminRequestDetail:
+    """Apply an allowed staff status transition and record an audit event."""
+    request = db.get(Request, request_id)
+
+    if request is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Request not found",
+        )
+
+    old_status = request.status
+    new_status = RequestStatus(payload.status)
+
+    # Idempotent retries should not create duplicate audit events.
+    if old_status == new_status:
+        return AdminRequestDetail.model_validate(request)
+
+    allowed_targets = ALLOWED_STATUS_TRANSITIONS.get(old_status, set())
+
+    if new_status not in allowed_targets:
+        old_value = (
+            old_status.value
+            if isinstance(old_status, RequestStatus)
+            else str(old_status)
+        )
+
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Cannot transition request from '{old_value}' to '{new_status.value}'."
+            ),
+        )
+
+    old_value = old_status.value
+
+    try:
+        request.status = new_status
+
+        db.add(
+            AuditLog(
+                request_id=request.id,
+                actor=current_staff.email,
+                action="status_change",
+                old_value=old_value,
+                new_value=new_status.value,
+            )
+        )
+
+        db.commit()
+        db.refresh(request)
+
+    except Exception:
+        db.rollback()
+        raise
 
     return AdminRequestDetail.model_validate(request)

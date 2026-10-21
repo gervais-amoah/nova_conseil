@@ -1,7 +1,8 @@
 # FILE: backend/app/schemas/request_schema.py
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from app.core.enums import RequestStatus
 
 
 class RequestCreate(BaseModel):
@@ -30,17 +31,8 @@ class RequestCreate(BaseModel):
         return v
 
 
-class RequestStatusRead(str, Enum):
-    RECEIVED = "received"
-    CLASSIFYING = "classifying"
-    CLASSIFIED = "classified"
-    UNCERTAIN = "uncertain"
-    ASSIGNED = "assigned"
-    RESOLVED = "resolved"
-
-
 class RequestRead(BaseModel):
     """Response shape for POST /api/v1/requests (201)."""
 
     reference_id: str
-    status: RequestStatusRead
+    status: RequestStatus
