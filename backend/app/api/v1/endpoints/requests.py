@@ -92,7 +92,7 @@ async def create_request(
         model.final_category = classification.category.value
         model.ai_confidence = classification.confidence
         model.classifier_source = classification.source
-        # model.reasoning = classification.reasoning  # RRR
+        model.ai_reasoning = classification.reasoning  # RRR
         model.human_corrected_flag = False
         db.commit()
     except Exception as exc:

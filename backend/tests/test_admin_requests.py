@@ -45,6 +45,7 @@ def seeded_requests(admin_client):
                 status=RequestStatus.UNCERTAIN,
                 ai_category="uncertain",
                 ai_confidence=0.0,
+                ai_reasoning="r",  # RRR
                 classifier_source="fallback",
             )
             session.add(req)
@@ -59,6 +60,7 @@ def seeded_requests(admin_client):
                 status=RequestStatus.CLASSIFIED,
                 ai_category="sales",
                 ai_confidence=0.95,
+                ai_reasoning="r",  # RRR
                 classifier_source="ai",
             )
             session.add(req)
@@ -173,6 +175,7 @@ def test_admin_requests_detail_returns_full_request(seeded_requests):
     assert data["status"] == "classified"
     assert data["ai_category"] == "sales"
     assert data["ai_confidence"] == 0.95
+    assert data["ai_reasoning"] == "r"  # rrr
     assert data["classifier_source"] == "ai"
     assert data["final_category"] is None
     assert data["human_corrected_flag"] is False

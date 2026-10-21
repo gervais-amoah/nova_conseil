@@ -3,6 +3,7 @@ import { formatConfidence } from "@/lib/request-status";
 import type { RequestDetail } from "@/lib/types";
 import {
   Check,
+  CheckCircle2,
   CircleUserRound,
   ClipboardCheck,
   MessageCircleText,
@@ -69,17 +70,17 @@ export function ClassificationDetailsCard({ req }: { req: RequestDetail }) {
         <DetailRow label="Final department">
           {req.final_category || "Not assigned"}
         </DetailRow>
-        <DetailRow label="Classification confidence">
-          {formatConfidence(req.ai_confidence) ?? "Not available"}
-        </DetailRow>
-        <DetailRow label="Classification source">
+        <DetailRow label="Initial source">
           {req.classifier_source || "Not available"}
         </DetailRow>
         <DetailRow label="Human correction">
           {req.human_corrected_flag ? (
             <span className="flex items-center gap-2">
-              <Check className="size-4 text-emerald-600" aria-hidden="true" />
               Corrected
+              <CheckCircle2
+                className="size-4 text-emerald-600"
+                aria-hidden="true"
+              />
             </span>
           ) : (
             "No correction recorded"

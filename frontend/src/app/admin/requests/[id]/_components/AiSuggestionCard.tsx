@@ -35,15 +35,16 @@ export function AiSuggestionCard({ req }: { req: RequestDetail }) {
         )}
         <div className="mt-5">
           <p className="text-xs font-medium text-foreground">
-            Classification status
+            Classification reasoning
           </p>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {hasSuggestion
+            {req.ai_reasoning ? req.ai_reasoning : "No data"}
+
+            {/* {hasSuggestion
               ? "Review the suggested department and confirm or change the final category below."
-              : "An AI category is not available for this request yet."}
+              : "An AI category is not available for this request yet."} */}
           </p>
         </div>
-        HHH: <div>{JSON.stringify(req)}</div>
       </div>
     </InfoCard>
   );

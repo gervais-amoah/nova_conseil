@@ -21,7 +21,7 @@ class Request(Base):
     name: Mapped[str] = mapped_column(String(200))
     email: Mapped[str] = mapped_column(String(320), index=True)
     message: Mapped[str] = mapped_column(Text)
-    # reasoning: Mapped[str] = mapped_column(Text)  # RRR reasoning
+    ai_reasoning: Mapped[str] = mapped_column(Text, nullable=True)  # RRR reasoning
 
     status: Mapped[RequestStatus] = mapped_column(
         Enum(RequestStatus, native_enum=False, length=20),

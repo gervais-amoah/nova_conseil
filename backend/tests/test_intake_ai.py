@@ -61,6 +61,7 @@ def test_success_persists_classification(ai_client):
         assert row.ai_category == "Sales"
         assert row.final_category == "Sales"
         assert row.ai_confidence == 0.87
+        assert row.ai_reasoning == "quote request"  # RRR
         assert row.classifier_source == "ai"
         assert row.human_corrected_flag is False
 
@@ -190,6 +191,7 @@ def test_real_uncertain_from_ai_has_source_ai(ai_client):
     assert row.ai_category == "uncertain"
     assert row.classifier_source == "ai"
     assert row.ai_confidence == 0.2
+    assert row.ai_reasoning == "vague"  # RRR
 
 
 def test_fallback_uncertain_has_source_fallback(ai_client):
