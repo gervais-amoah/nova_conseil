@@ -6,6 +6,7 @@ export interface RequestDetail {
   name: string;
   email: string;
   message: string;
+  // reasoning: string | null; // # RRR reasoning
   status: RequestStatus;
   ai_category: RequestCategory | null;
   ai_confidence: number | null;

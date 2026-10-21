@@ -22,11 +22,11 @@ class Settings(BaseSettings):
 
     # LLM backend switch. One of: "mock" | "local" | "production".
     # Default is "mock" so a fresh clone runs without an LLM.
-    ai_client_mode: str = "mock"
+    ai_client_mode: str = "local"
 
     # LM Studio (local dev) — OpenAI-compatible endpoint.
-    lm_studio_base_url: str = "http://localhost:1234"
-    lm_studio_model: str = "local-model"
+    lm_studio_base_url: str = "http://192.168.1.69:8080"
+    lm_studio_model: str = "google/gemma-4-e4b"
 
     # Production (Groq, Together, Fireworks, …) — OpenAI-compatible endpoint.
     production_ai_base_url: str = "https://api.groq.com/openai"

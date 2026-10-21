@@ -1,13 +1,17 @@
-// FILE: frontend/src/app/admin/requests/[id]/page.tsx
-
-import { RequestDetailContent } from "@/components/admin/RequestDetailContent";
+// page.tsx
+import { getRequestDetail } from "@/lib/admin-requests.server";
 import { Suspense } from "react";
+import RequestDetailClient from "./_components/RequestDetailClient";
 
-export default function RequestDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+type Props = { params: Promise<{ id: string }> };
+
+async function RequestDetailContent({ params }: Props) {
+  const { id } = await params;
+  const request = await getRequestDetail(id);
+  return <RequestDetailClient initialData={request} />;
+}
+
+export default function RequestDetailPage({ params }: Props) {
   return (
     <Suspense
       fallback={

@@ -1,83 +1,74 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, type ReactNode } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-type AuthState = "checking" | "authenticated" | "unavailable";
+class SessionError extends Error {
+  constructor(public status: number) {
+    super("Session check failed");
+  }
+  get isAuthError() {
+    return this.status === 401 || this.status === 403;
+  }
+}
+
+async function checkSession() {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/v1/auth/me`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+  } catch {
+    throw new SessionError(0);
+  }
+  if (!response.ok) throw new SessionError(response.status);
+  return true;
+}
 
 export function AdminAuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<AuthState>("checking");
 
-  const checkSession = useCallback(async () => {
-    setState("checking");
+  const { error, isFetching, refetch } = useQuery({
+    queryKey: ["admin-session"],
+    queryFn: checkSession,
+    retry: false,
+    staleTime: 60_000,
+  });
 
-    try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        router.replace("/login");
-        return;
-      }
-
-      if (!response.ok) {
-        setState("unavailable");
-        return;
-      }
-
-      setState("authenticated");
-    } catch {
-      setState("unavailable");
-    }
-  }, [router]);
+  const isAuthError = error instanceof SessionError && error.isAuthError;
 
   useEffect(() => {
-    void checkSession(); // <- Error here: Calling setState synchronously within an effect can trigger cascading renders
-  }, [checkSession]);
+    if (isAuthError) router.replace("/login");
+  }, [isAuthError, router]);
 
-  if (state === "checking") {
-    return (
-      <main
-        className="flex min-h-screen items-center justify-center bg-background"
-        aria-live="polite"
-      >
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <RefreshCw className="size-4 animate-spin" aria-hidden="true" />
-          Verifying your session…
-        </div>
-      </main>
-    );
-  }
-
-  if (state === "unavailable") {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <section className="w-full max-w-sm rounded-xl border border-border bg-white p-6 text-center">
-          <h1 className="text-lg font-semibold text-foreground">
-            Unable to verify your session
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            The server could not be reached or returned an unexpected response.
-            Please try again.
-          </p>
+  return (
+    <>
+      {error && !isAuthError && (
+        <div
+          role="alert"
+          className="flex mx-5 items-center justify-end gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2 text-sm text-amber-800"
+        >
+          Unable to verify your session. The server could not be reached.
           <button
             type="button"
-            onClick={() => void checkSession()}
-            className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            className="inline-flex items-center gap-2 font-medium hover:underline disabled:opacity-50"
           >
-            <RefreshCw className="size-4" aria-hidden="true" />
+            <RefreshCw
+              className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
             Try again
           </button>
-        </section>
-      </main>
-    );
-  }
-
-  return children;
+        </div>
+      )}
+      {children}
+    </>
+  );
 }

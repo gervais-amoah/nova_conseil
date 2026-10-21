@@ -67,7 +67,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/admin/requests");
+      router.replace("/admin/");
       router.refresh();
     } catch {
       setError(

@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_ai_client, get_rate_limiter
+from app.core.config import Settings
 from app.core.database import get_db
 from app.core.rate_limiter import RateLimiter
 from app.models.request import Request as RequestModel
 from app.models.request import RequestStatus
 from app.schemas.request_schema import RequestCreate, RequestRead
-from app.services.ai_client import AIClient
+from app.services.ai_client import AIClient, make_ai_client
 from app.services.classification import classify_request
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,11 @@ router = APIRouter()
 
 _DB_DEPENDENCY = Depends(get_db)
 _RATE_LIMITER = Depends(get_rate_limiter)
+
+
+base = Settings()
+choices = ["mock", "local", "production"]
+# _AI_CLIENT = make_ai_client(base.model_copy(update={"ai_client_mode": choices[1]}))
 _AI_CLIENT = Depends(get_ai_client)
 
 
@@ -69,6 +75,7 @@ async def create_request(
     # The request is persisted before AI runs (Phase 1 invariant: never
     # lose a request because the LLM is down). Public response never
     # reveals the classification; it stays "received" for the caller.
+
     classification = await classify_request(
         model.message,
         ai_client,
@@ -85,6 +92,7 @@ async def create_request(
         model.final_category = classification.category.value
         model.ai_confidence = classification.confidence
         model.classifier_source = classification.source
+        # model.reasoning = classification.reasoning  # RRR
         model.human_corrected_flag = False
         db.commit()
     except Exception as exc:

@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const font = Figtree({ subsets: ["latin"], variable: "--font-figtree" });
 
@@ -21,9 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={font.variable}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

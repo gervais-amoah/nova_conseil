@@ -31,6 +31,7 @@ class AdminRequestDetail(BaseModel):
     name: str
     email: str
     message: str
+    # reasoning: str | None // # RRR
     status: RequestStatus
     ai_category: str | None
     ai_confidence: float | None

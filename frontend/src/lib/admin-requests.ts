@@ -5,6 +5,7 @@ export const REQUEST_STATUSES = [
   "received",
   "classifying",
   "classified",
+  "uncertain",
   "assigned",
   "resolved",
 ] as const;
