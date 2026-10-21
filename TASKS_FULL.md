@@ -762,5 +762,56 @@ KNOWN DEBT / TODO
   wrapper is used by the CLI and tests. Rename to
   `_run_evaluation_async` if this becomes confusing.
 
+--- MEMORY COMPACT - PHASE 3 ---
+CONTEXT: Novae Conseil MVP - Phase 3 (Staff Auth, Dashboard, Audit) completed. Secure session auth, request review queue, and human category correction workflows are implemented and E2E verified.
+
+WHAT WAS BUILT THIS PHASE:
+- T-301a: Password hashing (bcrypt) and tamper-evident session token signing (itsdangerous).
+- T-301b: Idempotent staff seed script for deterministic dev/E2E environments.
+- T-301c: `/api/v1/auth/login` endpoint and `current_staff` dependency (HTTP-only cookie auth, no user enumeration).
+- T-302a: Admin request list (paginated, status filter) and detail endpoints (read-only).
+- T-302b: Category override endpoint (`PATCH /admin/requests/{id}/category`) with `AuditLog` creation tracking the human decision chain.
+- T-302c: Next.js frontend pages for Login, Admin Request Queue, and Request Detail with override form, verified by Playwright E2E.
+
+FINAL TECH DECISIONS:
+- Auth: Signed HTTP-only cookie sessions via `itsdangerous` (no JWT). Simpler, revocable, easier to test.
+- Audit: `actor` stored as `staff.email` (String) to avoid schema migration for `staff_id` FK in MVP.
+- Audit Logic: `old_value` tracks the *previous final_category* if it exists, else falls back to `ai_category`, preserving the full override history.
+- Validation: `email-validator` rejects `.test` TLDs; all test emails use `example.com`.
+- Rate Limiting: Dev/E2E limits are now configurable via `.env` (`RATE_LIMIT_PER_SECOND`, `RATE_LIMIT_PER_DAY`) and wired into both `deps.py` and `conftest.py` to prevent 429 collisions during Playwright runs.
+
+FILES CREATED/MODIFIED:
+- backend/app/core/security.py (bcrypt + itsdangerous primitives)
+- backend/app/core/config.py (added `secret_key`, `rate_limit_*`, `staff_seed_*` settings)
+- backend/app/models/staff.py (Staff model)
+- backend/scripts/seed_staff.py (Idempotent seed script)
+- backend/main.py (lifespan auto-seed integration)
+- backend/app/api/v1/endpoints/auth.py (Login endpoint)
+- backend/app/api/v1/endpoints/admin_requests.py (List, Detail, Override endpoints)
+- backend/app/api/v1/deps.py (wired `get_rate_limiter` to settings)
+- backend/app/schemas/admin_request_schema.py (Admin-specific Pydantic schemas)
+- backend/tests/conftest.py (wired test rate limiter to settings)
+- frontend/src/app/login/page.tsx (Login form)
+- frontend/src/app/admin/requests/page.tsx (Request queue table)
+- frontend/src/app/admin/requests/[id]/page.tsx (Detail + override form)
+- backend/tests/test_security.py, test_seed.py, test_auth.py, test_admin_requests.py, test_override.py
+- frontend/tests/e2e/admin_workflow.spec.ts, intake.spec.ts (fixed strict mode violation on alert role)
+
+TESTS: ~35 new tests (security, seed, auth, admin list, override, E2E). All green. Coverage target ≥90% on new modules.
+
+KEY LEARNINGS / GOTCHAS:
+1. 404 assertions in tests MUST check the response body (`detail: "Request not found"`) to avoid false positives from routing misses before auth/DB checks.
+2. Playwright `getByRole('alert')` collides with Next.js's hidden `__next-route-announcer__`. Disambiguate using the `name` option (e.g., `getByRole('alert', { name: /please check/i })`).
+3. Playwright `getByLabel` requires exact `htmlFor`/`id` matching in Next.js forms.
+4. `credentials: "include"` is mandatory in all frontend `fetch` calls to ensure the HTTP-only session cookie is sent.
+5. In-memory rate limiters persist across Playwright webServer restarts if `reuseExistingServer` is true. Configuring high dev limits in `.env` prevents flaky 429s.
+
+NEXT PHASE READY: Phase 4 - Client & Project Management (TDD).
+
+COMPACTING PROMPT FOR NEXT AGENT: "You are continuing project Novae Conseil. Read TASKS.md + this MEMORY COMPACT. Phase 3 is done. Do not re-implement. Continue from Phase 4 (Client & Project CRUD + linking to requests). Enforce TDD 3 Rules."
+
+KNOWN DEBT / TODO:
+- Mutation testing on Phase 3 endpoints pending execution (run `mutmut run --paths-to-mutate app/core/security.py app/api/v1/endpoints/auth.py app/api/v1/endpoints/admin_requests.py`).
+
 --- END MEMORY COMPACT ---
 ```
