@@ -6,7 +6,7 @@ Concrete adapters live here:
 
   - OpenAICompatibleAIClient : real HTTP adapter for LM Studio (dev),
                                 Groq, Together, etc. (prod). Same protocol,
-                                different base_url + model.
+                                different base_url + model + api_key.
   - MockAIClient             : deterministic stub for `AI_CLIENT_MODE=mock`.
                                 Returns a fixed "uncertain" classification.
                                 Used to run the app without any LLM.
@@ -17,6 +17,9 @@ Design notes:
   That is the whole point of the injection-defense seam in T-202.
 - Clients raise `AIClientError` on any failure. They do not decide
   fallbacks; the mediator (T-201b) does.
+- API keys are optional: local LM Studio doesn't auth, production does.
+  When the key is None we omit the Authorization header entirely rather
+  than sending "Bearer None", which would 401 every request.
 """
 
 from __future__ import annotations
@@ -51,8 +54,12 @@ class OpenAICompatibleAIClient:
     """HTTP adapter for any OpenAI-compatible `/v1/chat/completions` endpoint.
 
     Works unchanged against LM Studio (dev), Groq, Together, Fireworks, etc.
-    (prod). Only base_url and model differ between environments — the request
-    shape and response shape are identical.
+    (prod). Only base_url, model, and api_key differ between environments —
+    the request shape and response shape are identical.
+
+    `api_key` is optional:
+      - None  : no Authorization header sent (local LM Studio)
+      - set   : `Authorization: Bearer <key>` sent on every request (prod)
     """
 
     def __init__(
@@ -60,6 +67,7 @@ class OpenAICompatibleAIClient:
         *,
         base_url: str,
         model: str,
+        api_key: str | None = None,
         timeout: float = 30.0,
         client: httpx.AsyncClient | None = None,
     ) -> None:
@@ -69,6 +77,7 @@ class OpenAICompatibleAIClient:
             raise TypeError("model is required for OpenAICompatibleAIClient")
         self._base_url = base_url.rstrip("/")
         self._model = model
+        self._api_key = api_key or None
         self._timeout = timeout
         self._client = client or httpx.AsyncClient(timeout=timeout)
         self._owns_client = client is None
@@ -81,16 +90,20 @@ class OpenAICompatibleAIClient:
         payload = {
             "model": self._model,
             "temperature": 0,
-            # "response_format": {"type": "json_object"}, # failing with LM Studio
+            # "response_format": {"type": "json_object"}, # failing with LM Studio, but we keep it commented
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
+        headers: dict[str, str] = {}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
         try:
             resp = await self._client.post(
                 f"{self._base_url}/v1/chat/completions",
                 json=payload,
+                headers=headers,
             )
         except httpx.HTTPError as exc:
             raise AIClientError(f"transport error: {exc!r}") from exc
@@ -124,15 +137,19 @@ class MockAIClient:
         )
 
 
-def make_ai_client(settings: "Settings") -> AIClient:
+def make_ai_client(settings: Settings) -> AIClient:
     """Single switch point for dev / local / production LLM backends.
 
     Selected by `Settings.ai_client_mode`:
 
       - "mock"       : deterministic stub, no network (default for T-203)
       - "local"      : LM Studio at `Settings.lm_studio_base_url`
+                       (no API key — local server)
       - "production" : any OpenAI-compatible endpoint configured via
-                       `Settings.production_ai_base_url` / `_model`
+                       `Settings.production_ai_base_url` / `_model` /
+                       `_api_key`. Fails fast at boot if the key is
+                       missing — a typo'd env var should crash startup,
+                       not silently 401 every request.
 
     Raises ValueError on unknown mode — fail fast at boot rather than
     silently defaulting, which would hide a typo in env config.
@@ -146,9 +163,14 @@ def make_ai_client(settings: "Settings") -> AIClient:
             model=settings.lm_studio_model,
         )
     if mode == "production":
+        if not settings.production_ai_api_key:
+            raise ValueError(
+                "production AI mode requires PRODUCTION_AI_API_KEY to be set"
+            )
         return OpenAICompatibleAIClient(
             base_url=settings.production_ai_base_url,
             model=settings.production_ai_model,
+            api_key=settings.production_ai_api_key,
         )
     raise ValueError(
         f"unknown AI_CLIENT_MODE: {mode!r} (expected mock|local|production)"

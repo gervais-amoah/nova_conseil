@@ -5,6 +5,8 @@ Deliberate choices:
 - Signed cookie via itsdangerous (Phase 3 decision), NOT JWT. Revocable, no refresh dance.
 - Wrong password and unknown email return the SAME 401 body. No user enumeration.
 - secure=False because dev runs on http://localhost. Must flip to True behind HTTPS in prod.
+- logout is unauthenticated: a stale/expired cookie must still be clearable from the browser,
+  otherwise users get locked out of logging back in.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -63,7 +65,59 @@ async def login(
         max_age=SESSION_MAX_AGE_SECONDS,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=False,  # set True in prod,
+    )
+    return {"status": "ok"}
+
+
+@router.post("/auth/guest-login")
+async def guest_login(
+    response: Response,
+    db: Session = _DB_DEPENDENCY,
+) -> dict[str, str]:
+    """Automatically log in the designated read-only guest user."""
+    guest_staff = db.execute(
+        select(Staff).where(Staff.role == "guest")
+    ).scalar_one_or_none()
+
+    if guest_staff is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Guest account not found. Please run the seed script.",
+        )
+
+    # Reuse your existing session creation utility
+    token = create_session_token(guest_staff.id, settings.secret_key)
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # set True in prod
+    )
+    return {"status": "ok"}
+
+
+@router.post("/auth/logout")
+async def logout(response: Response) -> dict[str, str]:
+    """Clear the session cookie.
+
+    Intentionally unauthenticated: we must delete the cookie whether or not
+    the current token is valid, otherwise a user whose session has expired
+    can't log out cleanly. No DB lookup, no token verification — just tell
+    the browser to drop the cookie.
+
+    Flags MUST mirror login's set_cookie() exactly (httponly, samesite,
+    secure, path). Browsers only delete a cookie when the deletion response
+    matches the original cookie's scope; mismatched flags silently no-op.
+    """
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=False,  # set True in prod — must match login
     )
     return {"status": "ok"}
 

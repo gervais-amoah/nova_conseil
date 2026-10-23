@@ -28,7 +28,12 @@ export function SiteHeader() {
               </li>
             ))}
           </ul>
-          <ButtonLink href="#request">Submit a request</ButtonLink>
+          <ButtonLink
+            className="bg-white text-primary! hover:text-white! border-2 border-primary"
+            href="/admin"
+          >
+            Admin Panel
+          </ButtonLink>
         </nav>
       </div>
     </header>

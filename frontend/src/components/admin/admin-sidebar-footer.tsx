@@ -4,18 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, LogOut } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
 export function SidebarUserFooter({ isCollapsed }: { isCollapsed?: boolean }) {
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
-    // 1. Clear session cookie (adjust API route if you have one, e.g., fetch("/api/logout"))
-    document.cookie =
-      "session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-
-    // 2. Close modal and redirect to login page
+  const handleLogout = async () => {
     setIsLogoutOpen(false);
-    router.push("/admin/login");
+    try {
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Network error — still proceed to login so the UI is consistent
+    }
+    router.replace("/login");
     router.refresh();
   };
 

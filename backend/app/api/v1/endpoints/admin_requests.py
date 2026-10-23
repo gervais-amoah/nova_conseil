@@ -1,5 +1,5 @@
 # FILE: backend/app/api/v1/endpoints/admin_requests.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -80,6 +80,14 @@ async def override_category(
       - new_value = payload.final_category
     This allows reconstructing the full override history.
     """
+
+    # Block read-only guest users from making mutations
+    if current_staff.role == "guest":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Guest users have read-only access.",
+        )
+
     request = db.get(Request, request_id)
     if request is None:
         raise HTTPException(status_code=404, detail="Request not found")
@@ -130,6 +138,14 @@ async def transition_request_status(
     current_staff: Staff = _CURRENT_STAFF_DEPENDENCY,
 ) -> AdminRequestDetail:
     """Apply an allowed staff status transition and record an audit event."""
+
+    # Block read-only guest users from making mutations
+    if current_staff.role == "guest":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Guest users have read-only access.",
+        )
+
     request = db.get(Request, request_id)
 
     if request is None:

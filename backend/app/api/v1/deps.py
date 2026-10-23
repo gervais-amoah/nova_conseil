@@ -39,7 +39,7 @@ def get_ai_client() -> AIClient:
     from app.core.config import settings
     from app.services.ai_client import make_ai_client
 
-    print(f"⚠️⚠️⚠️⚠️ !!!! AI CLIENT MODE: {settings.ai_client_mode}")
+    # print(f"⚠️⚠️⚠️⚠️ !!!! AI CLIENT MODE: {settings}")
 
     return make_ai_client(settings)
 

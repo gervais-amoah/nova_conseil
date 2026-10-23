@@ -1,3 +1,4 @@
+// FILE: frontend/src/app/login/page.tsx
 "use client";
 
 import { useState, type SyntheticEvent } from "react";
@@ -39,9 +40,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function performLogin(targetEmail: string, targetPass: string) {
     if (isSubmitting) return;
 
     setError("");
@@ -55,19 +54,56 @@ export default function LoginPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          email: email.trim(),
-          password,
+          email: targetEmail.trim(),
+          password: targetPass,
         }),
       });
 
       if (!response.ok) {
         const body: unknown = await response.json().catch(() => null);
-
         setError(getErrorMessage(body));
         return;
       }
 
-      router.replace("/admin/");
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next") || "/admin/";
+      router.replace(next);
+      router.refresh();
+    } catch {
+      setError(
+        "Unable to reach the server. Check your connection and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await performLogin(email, password);
+  }
+
+  async function handleGuestLogin() {
+    if (isSubmitting) return;
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/guest-login`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const body: unknown = await response.json().catch(() => null);
+        setError(getErrorMessage(body));
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next") || "/admin/";
+      router.replace(next);
       router.refresh();
     } catch {
       setError(
@@ -151,13 +187,24 @@ export default function LoginPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Signing in…" : "Sign in"}
-          </button>
+          <div className="space-y-3 pt-1">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? "Signing in…" : "Sign in"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isSubmitting}
+              className="flex h-11 w-full items-center justify-center rounded-lg border border-border bg-secondary/50 px-4 text-sm font-medium text-secondary-foreground shadow-sm transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Continue as a Guest
+            </button>
+          </div>
         </form>
 
         <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">

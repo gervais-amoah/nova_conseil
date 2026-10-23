@@ -12,4 +12,7 @@ class Staff(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
+    role: Mapped[str] = mapped_column(
+        String, default="staff", nullable=False
+    )  # "staff" or "guest"
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)

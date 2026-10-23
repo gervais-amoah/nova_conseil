@@ -5,21 +5,24 @@ const SESSION_COOKIE_NAME = "session";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Allow public access to the admin login page to prevent redirect loops
+  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const isAuthenticated = !!session && session.trim() !== "";
+
+  // Logged-in users hitting /login → send them to the admin home
   if (pathname === "/login") {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL("/admin/", request.url));
+    }
     return NextResponse.next();
   }
 
-  // 2. Check for the session cookie
-  const hasSessionCookie = request.cookies.has(SESSION_COOKIE_NAME);
-
-  if (!hasSessionCookie) {
+  // Everything else under /admin/* requires auth
+  if (!isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set(
       "next",
       `${request.nextUrl.pathname}${request.nextUrl.search}`,
     );
-
     return NextResponse.redirect(loginUrl);
   }
 
@@ -27,5 +30,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/login"],
 };

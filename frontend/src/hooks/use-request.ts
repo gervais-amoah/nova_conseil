@@ -35,9 +35,9 @@ function useRequestMutation<TVars>(
       queryClient.invalidateQueries({ queryKey: ["admin-requests"] }); // list, if client-fetched
       router.refresh(); // list, if server-rendered
     },
-    onError: (error) => {
-      if (error.isAuthError) router.replace("/login");
-    },
+    // onError: (error) => {
+    //   if (error.isAuthError) router.replace("/login");
+    // },
   });
 }
 
